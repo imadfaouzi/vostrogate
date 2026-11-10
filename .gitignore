@@ -1,0 +1,37 @@
+# Local credentials (keep safe templates tracked)
+.env
+.env.*
+!.env.example
+*.env
+*.env.*
+!*.env.example
+*.pem
+*.key
+
+# Local deployment and tooling
+/docker-compose.override.yml
+/compose.override.yml
+/compose.override.yaml
+.agents/
+.codex/
+.aws/
+.idea/
+.vscode/
+
+# Dependencies and generated output
+node_modules/
+dist/
+coverage/
+coverage.out
+*.test
+/backend/vostrogate
+/backend/server
+
+# Local data, backups and logs (SQL migrations remain tracked)
+/backups/
+/data/
+*.sql.gz
+*.backup
+*.log
+.DS_Store
+Thumbs.db

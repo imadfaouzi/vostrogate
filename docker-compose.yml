@@ -1,0 +1,52 @@
+name: vostrogate
+services:
+  mysql:
+    image: mysql:8.4
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:?Set MYSQL_ROOT_PASSWORD in deployment .env}
+      MYSQL_DATABASE: ${MYSQL_DATABASE:-vostrogate}
+      MYSQL_USER: ${MYSQL_USER:-vostrogate}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:?Set MYSQL_PASSWORD in deployment .env}
+    command: ["--character-set-server=utf8mb4","--collation-server=utf8mb4_unicode_ci"]
+    volumes:
+      - mysql_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 --silent"]
+      interval: 10s
+      timeout: 5s
+      retries: 20
+    networks: [internal]
+  api:
+    build: ./backend
+    user: "${LOCAL_UID:-1000}:${LOCAL_GID:-1000}"
+    restart: unless-stopped
+    depends_on:
+      mysql: {condition: service_healthy}
+    environment:
+      HTTP_ADDR: ':8080'
+      VOSTROGATE_ENV_PATH: '/config/client.env'
+      VOSTROGATE_SETUP_TOKEN: ${VOSTROGATE_SETUP_TOKEN:?Generate a 32+ byte random setup token}
+      COOKIE_SECURE: ${COOKIE_SECURE:-false}
+      APP_ENV: ${APP_ENV:-development}
+    volumes:
+      - ./config:/config:ro
+    read_only: true
+    security_opt: ["no-new-privileges:true"]
+    networks: [internal]
+  web:
+    build: ./frontend
+    restart: unless-stopped
+    depends_on: [api]
+    ports:
+      - '127.0.0.1:8088:80'
+    read_only: true
+    tmpfs:
+      - /var/cache/nginx
+      - /var/run
+    security_opt: ["no-new-privileges:true"]
+    networks: [internal]
+networks:
+  internal: {}
+volumes:
+  mysql_data: {}
